@@ -23,6 +23,7 @@ def create_mesh(
     spatial_tiles: tuple[int, int, int] = (1, 1, 1),
     mode: Literal["intensity", "labels"] = "intensity",
     threshold: float = 0.05,
+    save_query_volume: bool = True,
 ) -> None:
     """
     voxel_size: (z,y,x) image scaling factor
@@ -30,6 +31,8 @@ def create_mesh(
     spatial_tiles: how many tiles in (z,y,x) directions
     mode: "labels" when each volume voxel in the same region has the same value
     threshold: only for mode "intensity" -- anything with intensity above median intensity * threshold will have value 1 and anything else will have value 0
+    save_query_volume: also write query_volume.npz (the label array + voxel_size)
+        so view_precomputed_mesh can answer volume queries against the same IDs
     """
 
     output_dir = Path(output_dir)
@@ -42,6 +45,14 @@ def create_mesh(
 
     nz, ny, nx = spatial_tiles
     labels = add_tiling(labels, nz, ny, nx)
+
+    if save_query_volume:
+        # same array (and IDs) the meshes are built from, for interactive queries
+        np.savez_compressed(
+            output_dir / "query_volume.npz",
+            labels=labels,
+            voxel_size=np.asarray(voxel_size, dtype=float),
+        )
 
     labels = ndarray_to_labels(labels, voxel_size)
 
